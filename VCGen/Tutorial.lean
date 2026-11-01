@@ -59,3 +59,59 @@ theorem nodup_correct (l : List Int) : nodup l ↔ l.Nodup := by
       (onContinue := fun pref suff seen =>
       (∀ x, x ∈ seen ↔ x ∈ pref) ∧ pref.Nodup)
   with finish
+
+structure Supply where
+  counter : Nat
+deriving Repr
+
+def mkFresh : StateM Supply Nat := do
+  let s ← get
+  let n := s.counter
+  modify fun s => { s with counter := s.counter + 1 }
+  pure n
+
+
+def mkFreshN (n : Nat) : StateM Supply (List Nat) := do
+  let mut acc := #[]
+  for _ in [:n] do
+    let x ← mkFresh
+    acc := acc.push x
+  pure acc.toList
+
+
+#eval mkFresh.run ⟨5⟩           -- (5, { counter := 6 })
+#eval mkFresh.run' ⟨5⟩          -- 5
+#eval (mkFreshN 3).run ⟨5⟩      -- ([5, 6, 7], { counter := 8 })
+#eval (mkFreshN 3).run' ⟨0⟩     -- [0, 1, 2]
+#eval (mkFreshN 0).run ⟨5⟩      -- ([], { counter := 5 })
+
+theorem mkFreshN_correct (n : Nat) : ((mkFreshN n).run' s).Nodup := by
+  generalize h : (mkFreshN n).run' s = x
+  apply StateM.of_run'_eq_wp h
+  vcgen[mkFreshN, mkFresh] invariants
+  · fun pref suff acc state =>
+      (∀ x ∈ acc, x < state.counter) ∧ acc.toList.Nodup
+  with finish
+
+@[spec]
+theorem mkFresh_spec (c : Nat) :
+  ⦃fun state => state.counter = c⦄
+  mkFresh
+  ⦃fun r state => r = c ∧ c < state.counter⦄ := by
+  vcgen [mkFresh] with finish
+
+
+
+@[spec]
+theorem mkFreshN_spec (n : Nat) :
+    ⦃fun _ => True⦄ mkFreshN n ⦃fun r _ => r.Nodup⦄ := by
+  vcgen [mkFreshN] invariants
+  · fun pref suff acc state =>
+      (∀ x ∈ acc, x < state.counter) ∧ acc.toList.Nodup
+  with finish
+
+theorem mkFreshN_correct_modular (n : Nat) :
+    ((mkFreshN n).run' s).Nodup := by
+  generalize h : (mkFreshN n).run' s = x
+  apply StateM.of_run'_eq_wp h
+  vcgen

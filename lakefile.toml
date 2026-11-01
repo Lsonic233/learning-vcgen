@@ -1,6 +1,6 @@
 name = "vcgen-exercises"
 version = "0.1.0"
-defaultTargets = ["VCGenExercises"]
+defaultTargets = ["VCGen"]
 
 [[lean_lib]]
-name = "VCGenExercises"
+name = "VCGen"

@@ -14,11 +14,6 @@ namespace EarlyReturn
 /-! ## `findAbove`
 
 Returns the first element that is `≥ n`.
-
-Two theorems, each needing only one half of the invariant:
-* `findAbove_some` is about the early exit. Which part of the invariant does the work?
-  Can the other part be trivial?
-* `findAbove_none` is about the normal exit.
 -/
 
 def findAbove (n : Nat) (l : List Nat) : Option Nat := Id.run do
